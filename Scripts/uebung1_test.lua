@@ -46,7 +46,6 @@ end
 -- Aufruf der Methoden (mit gewünschter Ausgabe)
 
 puppy = Dog:create("Puppy")
-print(puppy)
 puppy:bark()							--> Puppy: Woof!
 
 print()

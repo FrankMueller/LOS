@@ -74,7 +74,7 @@ _LOSClassMetatable = {
 
 --Declares a class
 function Class(params)
-
+_LOSPerformingClassDefinition=false
 	--Extract the attributes of the class
     local classname = params[1]
 
@@ -107,11 +107,15 @@ function Class(params)
 
 		--ToDo: Check validity of the attribute type and name
 		if (attributeName ~= 1) then
-			--Make sure that the attribute type is a class
-			assert(getmetatable(attributeType) == _LOSClassMetatable, "Invalid type specified for attribute '" .. attributeName .. "'")
+			if (attributeType == classname) then
+				class._attributes[attributeName] = attributeType
+			else
+				--Make sure that the attribute type is a class
+				assert(getmetatable(attributeType) == _LOSClassMetatable, "Invalid type specified for attribute '" .. attributeName .. "'")
 
-			--Add the attribute to the attribute table
-			class._attributes[attributeName] = attributeType._name
+				--Add the attribute to the attribute table
+				class._attributes[attributeName] = attributeType._name
+			end
 		end
 
 	end
@@ -177,6 +181,7 @@ function _LOSFindClassMember(class, memberName)
 	return member
 end
 
+--Checks if the sepcified name is a valid name for a class, method or attribute and throws appropriate exception if not
 function _LOSValidateName(name, item)
 	--Make sure the name string is not empty
 	assert(name ~= nil and name ~= "", "Invalid identifier '" .. name .. "'. The identifier of the " .. item .. " is not allowed to be empty")

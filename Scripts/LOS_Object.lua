@@ -33,23 +33,29 @@ _LOSObjectMetatable = {
 		local class = rawget(t, "_class")
 		local member = _LOSFindClassMember(class, k)
 
+		--Throw an error if the value is a method (methods can only be defined on classes)
+		local valueType = type(v)
+		assert(valueType ~= "function", "Defintion of methods on objects is not supported!")
+
 		--Throw an error if the member was not found
 		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(k))
 
 		--Throw an error if the member is a method (methods can only be defined on classes)
-		assert(type(member) ~= "function", "Redefinition of methods on objects is not supported!")
+		assert(member ~= "function", "Unable to assign a value to a method!")
 
-		--Check if the type of the value matches the type of the attribute
-		local valueType = type(v)
+		--Compute the type of the attribute
 		local attributeType = member
-
-		if (valueType == "table") then
-		    local valueClass = rawget(v, "_class")
-			local valueClassName = rawget(valueClass, "_name")
-		    assert(valueClassName == attributeType, "Invalid cast. Unable to cast object of type '" .. valueClassName .. "' into '" .. attributeType .. "'")
-		else
-		    assert(valueType == attributeType, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
+		if (attributeType == "String" or attributeType == "Number" or attributeType == "Boolean") then
+			attributeType = string.lower(attributeType)
 		end
+
+		--Compute the type of the value
+		if (valueType == "table") then
+			local valueClass = rawget(v, "_class")
+			valueType = valueClass._name
+		end
+
+		assert(valueType == attributeType, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
 
 		--Set the new value
 		local attributeTable = rawget(t, "_attributes")

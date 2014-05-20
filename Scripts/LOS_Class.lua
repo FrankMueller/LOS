@@ -15,6 +15,9 @@ _LOSClassMetatable = {
 			--Throw an error if the member was not found
 			assert(member ~= nil, "The class '" .. rawget(t, "_name") .. "' has no member with the name '" .. tostring(k) .. "'")
 
+			--Throw an error if the member is a function (calls of function on a class are invalid)
+			assert(type(member) ~= "function", "The call of a method is not allowed on a class")
+
 			--Return the member
 			return member
 		end
@@ -78,6 +81,9 @@ function Class(params)
 	--Check if the class name is valid
 	_LOSValidateName(classname, "class")
 
+	--Throw an error if there is an field defined in the global table with the same name
+	assert(_G[classname] == nil, "There is already a field defined with the name '" .. classname .. "'")
+
 	--Create the new class
     local class = {}
 
@@ -101,13 +107,11 @@ function Class(params)
 
 		--ToDo: Check validity of the attribute type and name
 		if (attributeName ~= 1) then
-		    local attributeTypeValue = type(attributeType)
+			--Make sure that the attribute type is a class
+			assert(getmetatable(attributeType) == _LOSClassMetatable, "Invalid type specified for attribute '" .. attributeName .. "'")
 
-			if (attributeTypeValue == type(table)) then
-				class._attributes[attributeName] = attributeType._name
-			else
-				class._attributes[attributeName] = attributeTypeValue
-			end
+			--Add the attribute to the attribute table
+			class._attributes[attributeName] = attributeType._name
 		end
 
 	end
@@ -134,12 +138,12 @@ function _LOSInitializeInstance(class, ...)
 
 	--Initialize all attributes of the object to their default values
 	for attributeName,attributeType in pairs(class._attributes) do
-		if (attributeType == type(String)) then
-			object._attributes[attributeName] = String
-		elseif (attributeType == type(Number)) then
-			object._attributes[attributeName] = Number
-		elseif (attributeType == type(Boolean)) then
-			object._attributes[attributeName] = Boolean
+		if (attributeType == String._name) then
+			object._attributes[attributeName] = ""
+		elseif (attributeType == Number._name) then
+			object._attributes[attributeName] = 0
+		elseif (attributeType == Boolean._name) then
+			object._attributes[attributeName] = false
 		else
 			object._attributes[attributeName] = nil
 		end

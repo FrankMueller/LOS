@@ -1,4 +1,6 @@
---Declare the basic types and their empty values
-String = ""
-Number = 0
-Boolean = false
+require "LOS_Class"
+
+--Declare the basic types
+Class{ "String" }
+Class{ "Number" }
+Class{ "Boolean" }

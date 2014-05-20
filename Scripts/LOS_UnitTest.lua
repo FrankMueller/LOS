@@ -1,41 +1,47 @@
 require("LOS_gruppe22")
 
+--Counter to count the tests which are run
+local testIndex = 1
 
-function RunTest(testDescription, testFunction, expectedResult)
-	print("--> " .. testDescription)
+--Helper function to perform a test and check if the function acts like expected
+local function RunTest(testDescription, testFunction, errorExpected)
 
+	--Print a headline for the test and increase the test counter
+	print("--> Test " .. testIndex .. ": " .. testDescription)
+	testIndex = testIndex + 1
+
+	--Call the test method
 	local status, error = pcall(testFunction)
 
+	--If the test method threw an error then print the error message
 	if (status == false) then
 		print("--> Call resulted in an error: '" .. error .. "'")
 	end
 
-	if (status == expectedResult) then
+	--If the test method threw an error as expected then print that the test has passed; otherwise print that is failed
+	if (status ~= errorExpected) then
 		print("> Passed")
 	else
 		print("> Failed")
 	end
-
 	print()
 end
 
 
---Test 1: Simple class test
---=========================
+--Simple class test
 function SimpleClassTest()
 	Class{ "Cat" }
 	function Cat:meow( )
-	  print("Meow!")
+		print("Meow!")
 	end
 
 	kitty = Cat:create( )
 	kitty:meow()							--> Meow!
 end
-RunTest("Test 1: Simple class test", SimpleClassTest, true)
+RunTest("Simple class test", SimpleClassTest, false)
 
 
---Test 2: Class with attributes and custom constructor
---====================================================
+--Class with attributes and custom constructor test
 function FullClassTest()
 	Class{'Dog', name = String, friend = Cat}
 	function Dog:create( n)
@@ -61,89 +67,51 @@ function FullClassTest()
 	puppy:bark()							--> Puppy: Woof!
 										--> Meow!
 end
-RunTest("Test 2: Class with attributes and custom constructor", FullClassTest, true)
+RunTest("Class with attributes and custom constructor", FullClassTest, false)
 
 
---Test 3: Call of an unknown method
---=================================
-local function CallOfUnknownMethodTest()
-	puppy:dance()
-end
-RunTest("Test 3: Call of an unknown method", FullClassTest, false)
+--Call of an unknown method
+RunTest("Call of an unknown method", function() puppy:dance() end, true)
+
+--Assignment of an unknown attributes
+RunTest("Assignment of a value with a wrong type", function() puppy.name = false end, true)
+
+--Use of class itself as attribute type
+RunTest("Use of class itself as attribute type", function() Class{"Mouse", father = Mouse} end, false)
+
+--Use of an unknown type for an attribute
+RunTest("Use of an unknown type for an attribute", function() Class{"Mouse", enemy = Elephant} end, true)
+
+--Use of a class name with blanks
+RunTest("Use of a class name with blanks", function() Class{"Kitty cat"} end, true)
+
+--Use of an empty class name
+RunTest("Use of an empty class name", function() Class{""} end, true)
+
+--Invalid attribute declaration
+RunTest("Invalid attribute declaration", function() Class{"Test", attribute1 = 5} end, true)
+
+--Add method to object
+RunTest("Add method to object", function() function puppy:walk(steps) print("walking ", steps, " steps") end end, true)
+
+--Change method of object
+RunTest("Change method of object", function() function puppy:bark() print("barking") end end, true)
+
+--Add attribut to object
+RunTest("Add attribut to object", function() puppy.weight = 10 end, true)
+
+--Add attribut to class
+RunTest("Add attribut to class", function()	Dog.weight = Number end, true)
 
 
---Test 4: Assignment of an unknown attributes
---===========================================
-local function AssignmentOfValueWithWrongType()
-	puppy.name = false
-end
-RunTest("Test 4: Assignment of a value with a wrong type", AssignmentOfValueWithWrongType, false)
-
-
---Test 5: Use of an unknown type for an attribute
---===============================================
-local function UnknownTypeTest()
-	Class{"Mouse", enemy = Elephant}
-	return Mouse
-end
-RunTest("Test 5: Use of an unknown type for an attribute", UnknownTypeTest, false)
-
-
---Test 6: Use of a class name with blanks
---=======================================
-local function BlankInClassnameTest()
-	Class{"Kitty cat"}
-end
-RunTest("Test 6: Use of a class name with blanks", BlankInClassnameTest, false)
-
-
---Test 7: Use of an empty class name
---==================================
-local function EmptyClassnameTest()
-	Class{""}
-end
-RunTest("Test 7: Use of an empty class name", EmptyClassnameTest, false)
-
-
---Test 8: Invalid attribute declaration
---=====================================
-local function InvalidAttributeTest()
-	Class{"Test", attribute1 = 5}
-end
-RunTest("Test 8: Invalid attribute declaration", InvalidAttributeTest, false)
-
-
---Test 9: Add method to object
---============================
-local function AddMethodToObjectTest()
-	function puppy:walk(steps)
-		print("walking ", steps, " steps")
-	end
-end
-RunTest("Test 9: Add method to object", AddMethodToObjectTest, false)
-
-
---Test 10: Change method of object
---================================
-local function ChangeMethodOfObjectTest()
-	function puppy:bark()
-		print("barking")
-	end
-end
-RunTest("Test 10: Change method of object", ChangeMethodOfObjectTest, false)
-
-
---Test 11: Add attribut to object
---==============================
-local function AddAttributeToObjectTest()
-	puppy.weight = 10
-end
-RunTest("Test 11: Add attribut to object", AddAttributeToObjectTest, false)
-
-
---Test 12: Add attribut to class
---==============================
-local function AddAttributeToClassTest()
-	Dog.weight = Number
-end
-RunTest("Test 12: Add attribut to class", AddAttributeToClassTest, false)
+--Try to redefine LOS keywords
+---------------------------------------
+RunTest("Try to redefine 'String' keyword", function() String = "" end, true)
+RunTest("Try to redefine 'Number' keyword", function() Number = "" end, true)
+RunTest("Try to redefine 'Boolean' keyword", function() Boolean = "" end, true)
+RunTest("Try to redefine 'Class' keyword", function() Class = "" end, true)
+RunTest("Try to redefine '_LOSInitializeInstance' function", function() _LOSInitializeInstance = "" end, true)
+RunTest("Try to redefine '_LOSFindClassMember' function", function() _LOSFindClassMember = "" end, true)
+RunTest("Try to redefine '_LOSValidateName' function", function() _LOSValidateName = "" end, true)
+RunTest("Try to redefine '_LOSClassMetatable' table", function() _LOSClassMetatable = "" end, true)
+RunTest("Try to redefine '_LOSObjectMetatable' table", function() _LOSObjectMetatable = "" end, true)

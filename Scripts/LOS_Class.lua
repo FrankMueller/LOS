@@ -1,21 +1,31 @@
+---------------------------------------------
+-- Contains class related fields and functions
+-- of LOS
+---------------------------------------------
+-- Authors:
+--   Ghadah Altayyari  -
+--   Felix Held        -
+--   Frank Müller      - 200407
+---------------------------------------------
+
 
 --Build a customized metatable to customize the access to the attributes and methods of a class
 _LOSClassMetatable = {
 
 	--Specify a customized function for get access of class members
-    __index = function(t, k)
+    __index = function(table, key)
 
-		--If the constructor was called then redirect the call to our instance initialization function
-	    if (k == "create") then
-			return rawget(t, "_LOSInitializeInstance");
+		--If the constructor was called then redirect the call to our instance initialization function; otherwise get the member
+	    if (key == "create") then
+			return rawget(table, "_LOSInitializeInstance");
 		else
 			--Find the member of the class
-			local member = _LOSFindClassMember(t, k)
+			local member = _LOSFindClassMember(table, key)
 
 			--Throw an error if the member was not found
-			assert(member ~= nil, "The class '" .. rawget(t, "_name") .. "' has no member with the name '" .. tostring(k) .. "'")
+			assert(member ~= nil, "The class '" .. rawget(table, "_name") .. "' has no member with the name '" .. tostring(key) .. "'")
 
-			--Throw an error if the member is a function (calls of function on a class are invalid)
+			--Throw an error if the member is a function (calls of functions on a class are invalid)
 			assert(type(member) ~= "function", "The call of a method is not allowed on a class")
 
 			--Return the member
@@ -24,32 +34,33 @@ _LOSClassMetatable = {
     end,
 
     --Specify a customized function for set access of class members
-    __newindex = function(t, k, v)
+    __newindex = function(table, key, value)
 
 		--Check if the member name is valid
-		_LOSValidateName(k, "method")
+		_LOSValidateName(key, "method")
 
 		--Throw an error if the specified value to set is not a method (attributes can only be defined on class declaration)
-		assert(type(v) == "function", "Dynamic adding of class attributes is not supported!")
+		assert(type(value) == "function", "Dynamic adding of class attributes is not supported!")
 
-		--If the constructor was called then store the specified value in the class table to be able to call it on initialization
-		if (k == "create") then
-			--Store the custom constructor in a hidden field to be able to call it on initialization
-			rawset(t, "_LOSCustomConstructor", v)
+		--If the constructor was called then store the specified value in the class table to be able to call it after initialization; otherwise add the member
+		if (key == "create") then
+			--Store the custom constructor in a hidden field to be able to call it after initialization
+			rawset(table, "_LOSCustomConstructor", value)
 		else
 			--Find the member of the class
-			local member = _LOSFindClassMember(t, k)
+			local member = _LOSFindClassMember(table, key)
 
 			--Throw an error if there is already a method or attribute defined with the same name
-			assert(member == nil, "The class '" .. rawget(t, "_name") .. "' already contains a member with the name '" .. tostring(k) .. "'")
+			assert(member == nil, "The class '" .. rawget(table, "_name") .. "' already contains a member with the name '" .. tostring(key) .. "'")
 
 			--Add the method to the method table
-			rawset(rawget(t, "_methods"), k, v)
+			rawset(rawget(table, "_methods"), key, value)
 		end
     end,
 
 	--Specify a customized string conversion
 	__tostring = function(self)
+
 		--Get the class and attribute tables
 		local class = self
 
@@ -74,7 +85,10 @@ _LOSClassMetatable = {
 
 --Declares a class
 function Class(params)
-_LOSPerformingClassDefinition=false
+
+	--Unset the class definition flag
+	_LOSPerformingClassDefinition = false
+
 	--Extract the attributes of the class
     local classname = params[1]
 
@@ -99,21 +113,24 @@ _LOSPerformingClassDefinition=false
 	--Add a table to store the attributes of the class
 	class._attributes = {}
 
-	--Add the attributes
+	--Validate the specified attributes and add them to the attribute table of the class
 	for attributeName,attributeType in pairs(params) do
 
-		--Check if the class name is valid
+		--Check if the name of the attribute is valid
 		_LOSValidateName(attributeName, "attribute")
 
-		--ToDo: Check validity of the attribute type and name
+		--Check validity of the attribute type (skip the attribute "1" this is our classname)
 		if (attributeName ~= 1) then
+
+			--If the type of the attribute is the class we declare, then accept without further validation; otherwise validate the type of the attribute
 			if (attributeType == classname) then
+				--Add the attribute to the attribute table of the class
 				class._attributes[attributeName] = attributeType
 			else
-				--Make sure that the attribute type is a class
+				--Make sure that the attribute type is a class (a table is expected to be a class if its metatable is our "_LOSClassMetatable")
 				assert(getmetatable(attributeType) == _LOSClassMetatable, "Invalid type specified for attribute '" .. attributeName .. "'")
 
-				--Add the attribute to the attribute table
+				--Add the attribute to the attribute table of the class
 				class._attributes[attributeName] = attributeType._name
 			end
 		end
@@ -132,7 +149,7 @@ end
 function _LOSInitializeInstance(class, ...)
 
 	--Initialize a new table -> our object
-	object = {}
+	local object = {}
 
 	--Add the '_class' attribute to be able to identify the class of the object
 	object._class = class

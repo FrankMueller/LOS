@@ -1,3 +1,12 @@
+---------------------------------------------
+-- A basic unit test for LOS
+---------------------------------------------
+-- Authors:
+--   Ghadah Altayyari  -
+--   Felix Held        -
+--   Frank Müller      - 200407
+---------------------------------------------
+
 require("LOS_gruppe22")
 
 --Counter to count the tests which are run
@@ -22,7 +31,7 @@ local function RunTest(testDescription, testFunction, errorExpected)
 	if (status ~= errorExpected) then
 		print("> Passed")
 	else
-		print("> Failed")
+		print("! Failed")
 	end
 	print()
 end
@@ -96,6 +105,10 @@ RunTest("Add method to object", function() function puppy:walk(steps) print("wal
 
 --Change method of object
 RunTest("Change method of object", function() function puppy:bark() print("barking") end end, true)
+
+--Add method with the same name as an attribute
+RunTest("Add method with the same name as an attribute", function() function Dog:name() print("barking") end end, true)
+--RunTest("Add two attributes with the same name", function() Class{"Mouse2", enemy = Elephant, enemy = Cat} end, true)  --Not specified
 
 --Add attribut to object
 RunTest("Add attribut to object", function() puppy.weight = 10 end, true)

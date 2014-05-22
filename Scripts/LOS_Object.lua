@@ -1,24 +1,32 @@
+---------------------------------------------
+-- Contains object related fields of LOS
+---------------------------------------------
+-- Authors:
+--   Ghadah Altayyari  -
+--   Felix Held        -
+--   Frank Müller      - 200407
+---------------------------------------------
 
 --Build a customized metatable to customize the access to the attributes and methods of an object
 _LOSObjectMetatable = {
 
 	--Specify a customized function for get access of object members
-    __index = function(t, k)
+    __index = function(table, key)
 
 		--Find the member of the class
-		local class = rawget(t, "_class")
-		local member = _LOSFindClassMember(class, k)
+		local class = rawget(table, "_class")
+		local member = _LOSFindClassMember(class, key)
 
 		--Throw an error if the member was not found
-		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(k))
+		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(key))
 
 		--If the member is not a function than check if there is a value available on the object; otherwise return the method
 		if (type(member) ~= "function") then
 			--Get the attribute table of the object
-			local attributeTable = rawget(t, "_attributes")
+			local attributeTable = rawget(table, "_attributes")
 
 			--Return the value of the attribute
-			return attributeTable[k]
+			return attributeTable[key]
 		else
 			--Return the method
 			return member
@@ -27,14 +35,14 @@ _LOSObjectMetatable = {
     end,
 
     --Specify a customized function for set access of object members
-    __newindex = function(t, k, v)
+    __newindex = function(table, key, value)
 
 	    --Find the member of the class
-		local class = rawget(t, "_class")
-		local member = _LOSFindClassMember(class, k)
+		local class = rawget(table, "_class")
+		local member = _LOSFindClassMember(class, key)
 
 		--Throw an error if the value is a method (methods can only be defined on classes)
-		local valueType = type(v)
+		local valueType = type(value)
 		assert(valueType ~= "function", "Defintion of methods on objects is not supported!")
 
 		--Throw an error if the member was not found
@@ -51,15 +59,15 @@ _LOSObjectMetatable = {
 
 		--Compute the type of the value
 		if (valueType == "table") then
-			local valueClass = rawget(v, "_class")
+			local valueClass = rawget(value, "_class")
 			valueType = valueClass._name
 		end
 
 		assert(valueType == attributeType, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
 
 		--Set the new value
-		local attributeTable = rawget(t, "_attributes")
-        rawset(attributeTable, k, v)
+		local attributeTable = rawget(table, "_attributes")
+        rawset(attributeTable, key, value)
     end,
 
 	--Specify a customized string conversion

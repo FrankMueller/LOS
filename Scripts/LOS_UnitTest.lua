@@ -78,9 +78,43 @@ function FullClassTest()
 end
 RunTest("Class with attributes and custom constructor", FullClassTest, false)
 
+--Class with multiple custom constructors test
+function ClassWithMultipleConstructorsTest()
+	Class{'Grizzly', name = String, age = Number}
+	function Grizzly:create(name)
+		self.name = name
+	end
+	function Grizzly:create(name, age)
+		self.name = name
+		self.age = age
+	end
+end
+RunTest("Class with multiple custom constructors", ClassWithMultipleConstructorsTest, true)
+
+--Attribute initialization test
+function AttributeInitializationTest()
+	Class{'Sheep', Name = String, Weight = Number, HasToBeSheared = Boolean, Daddy = Sheep }
+
+	local shawn = Sheep:create()
+	assert(shawn.Name == "")
+	assert(shawn.Weight == 0)
+	assert(shawn.HasToBeSheared == false)
+	assert(shawn.Daddy == nil)
+end
+RunTest("Attribute initialization test", AttributeInitializationTest, false)
+
+--Attribute nil test
+RunTest("String attribute nil assignment test", function() local shawn = Sheep:create() shawn.Name = nil end, true)
+RunTest("Number attribute nil assignment test", function() local shawn = Sheep:create() shawn.Weight = nil end, true)
+RunTest("Boolean attribute nil assignment test", function() local shawn = Sheep:create() shawn.HasToBeSheared = nil end, true)
+RunTest("Class attribute nil assignment test", function() local shawn = Sheep:create() shawn.Daddy = nil end, false)
+
+--Call of constructor on an object
+RunTest("Call of constructor on an object", function() puppy:create("test") end, true)
 
 --Call of an unknown method
 RunTest("Call of an unknown method", function() puppy:dance() end, true)
+RunTest("Call of an unknown attribute", function() print(puppy.Age) end, true)
 
 --Assignment of an unknown attributes
 RunTest("Assignment of a value with a wrong type", function() puppy.name = false end, true)
@@ -116,6 +150,7 @@ RunTest("Add attribut to object", function() puppy.weight = 10 end, true)
 --Add attribut to class
 RunTest("Add attribut to class", function()	Dog.weight = Number end, true)
 
+RunTest("Call method on class", function() Dog.bark() end, true);
 
 --Try to redefine LOS keywords
 ---------------------------------------

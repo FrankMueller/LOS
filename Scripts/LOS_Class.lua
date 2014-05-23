@@ -44,6 +44,9 @@ _LOSClassMetatable = {
 
 		--If the constructor was called then store the specified value in the class table to be able to call it after initialization; otherwise add the member
 		if (key == "create") then
+			--Throw an error if there is already a constructor defined
+			assert(rawget(table, "_LOSCustomConstructor") == nil, "The class '" .. rawget(table, "_name") .. "' already contains a constructor.")
+
 			--Store the custom constructor in a hidden field to be able to call it after initialization
 			rawset(table, "_LOSCustomConstructor", value)
 		else

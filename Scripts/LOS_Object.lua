@@ -54,6 +54,8 @@ _LOSObjectMetatable = {
 		--Compute the type of the attribute
 		local attributeType = member
 		if (attributeType == "String" or attributeType == "Number" or attributeType == "Boolean") then
+			assert(value ~= nil, "Invalid assignment! 'nil' is an invalid value for attributes of type 'String', 'Number' and 'Boolean'.")
+
 			attributeType = string.lower(attributeType)
 		end
 
@@ -63,7 +65,7 @@ _LOSObjectMetatable = {
 			valueType = valueClass._name
 		end
 
-		assert(valueType == attributeType, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
+		assert(valueType == attributeType or value == nil, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
 
 		--Set the new value
 		local attributeTable = rawget(table, "_attributes")

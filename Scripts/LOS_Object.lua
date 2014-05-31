@@ -15,7 +15,7 @@ _LOSObjectMetatable = {
 
 		--Find the member of the class
 		local class = rawget(table, "_class")
-		local member = _LOSFindClassMember(class, key)
+		local member = _LOSFindClassMember(class, key, true)
 
 		--Throw an error if the member was not found
 		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(key))
@@ -39,7 +39,7 @@ _LOSObjectMetatable = {
 
 	    --Find the member of the class
 		local class = rawget(table, "_class")
-		local member = _LOSFindClassMember(class, key)
+		local member = _LOSFindClassMember(class, key, false)
 
 		--Throw an error if the value is a method (methods can only be defined on classes)
 		local valueType = type(value)

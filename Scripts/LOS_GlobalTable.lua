@@ -18,7 +18,7 @@ local _GlobalMetaTable = {
 	__index = function(table, key)
 
 		--If the function "Class" is called then set a flag that we are in class definition mode
-		if (key == "Class") then
+		if (key == "Class" or key == "Enum") then
 			_LOSGlobalTable._LOSPerformingClassDefinition = true
 		end
 

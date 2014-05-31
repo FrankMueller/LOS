@@ -2,8 +2,8 @@
 -- Contains constants for LOS
 ---------------------------------------------
 -- Authors:
---   Ghadah Altayyari  -
---   Felix Held        -
+--   Ghadh Altaiari    - 322844
+--   Felix Held        - 350194
 --   Frank Müller      - 200407
 ---------------------------------------------
 

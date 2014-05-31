@@ -3,11 +3,10 @@
 -- of LOS
 ---------------------------------------------
 -- Authors:
---   Ghadah Altayyari  -
---   Felix Held        -
+--   Ghadh Altaiari    - 322844
+--   Felix Held        - 350194
 --   Frank Müller      - 200407
 ---------------------------------------------
-
 
 --Build a customized metatable to customize the access to the attributes and methods of a class
 _LOSClassMetatable = {

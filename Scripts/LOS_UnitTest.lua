@@ -133,6 +133,7 @@ RunTest("Use of an empty class name", function() Class{""} end, true)
 
 --Invalid attribute declaration
 RunTest("Invalid attribute declaration", function() Class{"Test", attribute1 = 5} end, true)
+RunTest("Invalid attribute declaration", function() Class{"Test2", ["Attribute name with spaces"] = 5, [0] = Number, [true] = false} end, true)
 
 --Add method to object
 RunTest("Add method to object", function() function puppy:walk(steps) print("walking ", steps, " steps") end end, true)

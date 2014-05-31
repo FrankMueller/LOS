@@ -22,11 +22,8 @@ _LOSClassMetatable = {
 			--Find the member of the class
 			local member = _LOSFindClassMember(table, key)
 
-			--Throw an error if the member was not found
-			assert(member ~= nil, "The class '" .. rawget(table, "_name") .. "' has no member with the name '" .. tostring(key) .. "'")
-
-			--Throw an error if the member is a function (calls of functions on a class are invalid)
-			assert(type(member) ~= "function", "The call of a method is not allowed on a class")
+			--Throw an error if the member was found (it is not allowed to access class members)
+			assert(member == nil, "Access of class members is not supported.");
 
 			--Return the member
 			return member
@@ -124,6 +121,10 @@ function Class(params)
 
 		--Check validity of the attribute type (skip the attribute "1" this is our classname)
 		if (attributeName ~= 1) then
+
+			--Throw an error if there is
+			attributeNameType = type(attributeName)
+			assert(attributeNameType == "string", "Invalid identifier '" .. attributeName .. "'. The identifier of the attribute is not allowed to be a number or boolean")
 
 			--If the type of the attribute is the class we declare, then accept without further validation; otherwise validate the type of the attribute
 			if (attributeType == classname) then

@@ -77,20 +77,18 @@ function Enum(params)
 		--Make sure that the
 		assert(type(valueIndex) == "number" or valueIndex == "default", "Invalid enum field declaration '" .. valueIndex .. " = " .. valueName .. "'.")
 
-		--Add the attribute to the attribute table of the class
-		enum._values[valueName] = valueName
+		local enumField = _LOSCreateEnumField(valueName)
 
-		if (defaultValue == nil) then
-			defaultValue = valueName
+		--Add the attribute to the attribute table of the class
+		enum._values[valueName] = enumField
+
+		if (defaultValue == nil or valueIndex == "default") then
+			defaultValue = enumField
 		end
 
 	end
 
-	if (params[2]["default"] == nil) then
-		enum._default = defaultValue
-	else
-		enum._default = params[2]["default"]
-	end
+	enum._default = defaultValue
 
 	--Add a customized metatable for the class
 	setmetatable(enum, _LOSEnumMetatable)

@@ -22,6 +22,11 @@ local _GlobalMetaTable = {
 			_LOSGlobalTable._LOSPerformingClassDefinition = true
 		end
 
+		if (key == "super") then
+			_LOSGlobalTable._LOSCallingSuperMethod = true
+			return _LOSGlobalTable._LOSCallingObject
+		end
+
 		--If we are in class definition mode then replace accesses to undefined fields with a placeholder (the key); otherwise redirect the access to _LOSGlobalTable
 		if (_LOSGlobalTable._LOSPerformingClassDefinition) then
 

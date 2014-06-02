@@ -41,10 +41,10 @@ _LOSClassMetatable = {
 		--If the constructor was called then store the specified value in the class table to be able to call it after initialization; otherwise add the member
 		if (key == "create") then
 			--Throw an error if there is already a constructor defined
-			assert(rawget(table, "_LOSCustomConstructor") == nil, "The class '" .. rawget(table, "_name") .. "' already contains a constructor.")
+			assert(rawget(rawget(table, "_methods"), "_LOSCustomConstructor") == nil, "The class '" .. rawget(table, "_name") .. "' already contains a constructor.")
 
 			--Store the custom constructor in a hidden field to be able to call it after initialization
-			rawset(table, "_LOSCustomConstructor", value)
+			rawset(rawget(table, "_methods"), "_LOSCustomConstructor", value)
 		else
 			--Find the member of the class
 			local member = _LOSFindClassMember(table, key, false)
@@ -52,8 +52,26 @@ _LOSClassMetatable = {
 			--Throw an error if there is already a method or attribute defined with the same name
 			assert(member == nil, "The class '" .. rawget(table, "_name") .. "' already contains a member with the name '" .. tostring(key) .. "'")
 
+			local function wrapper(self, ...)
+
+				_LOSCallingSuperMethod = false
+
+				local _LOSSuperClassSave = _LOSSuperClass
+	local test = "Test"
+
+				_LOSSuperClass = rawget(table, "_base")
+				_LOSCallingObject = self
+
+				local result = { value(self, ...) }
+
+				_LOSSuperClass = _LOSSuperClassSave
+				_LOSCallingObject = nil
+
+				return unpack(result)
+			end
+
 			--Add the method to the method table
-			rawset(rawget(table, "_methods"), key, value)
+			rawset(rawget(table, "_methods"), key, wrapper)
 		end
     end,
 
@@ -64,16 +82,22 @@ _LOSClassMetatable = {
 		local class = self
 
 		--Add the type to the string
-		local str = "Class '" .. rawget(class, "_name") .. "':"
+		local str = "Class '" .. rawget(class, "_name")
+		local baseClass = rawget(class, "_base")
+		if (baseClass ~= nil) then
+			str = str .. " extends '" .. rawget(baseClass, "_name")
+		end
+
+		str = str .. "':\n"
 
 		--Add the attributes to the string
-		str = str .. "\r\n\tAttributes:\n"
+		str = str .. "\tAttributes:\n"
 		for attributeName,attributeType in pairs(rawget(class, "_attributes")) do
 			str = str .. "\t\t" .. attributeType .. ": " .. attributeName .. "\n"
 		end
 
 		--Add the methods to the string
-		str = str .. "\r\n\tMethods:\n"
+		str = str .. "\tMethods:\n"
 		for methodName,method in pairs(rawget(class, "_methods")) do
 			str = str .. "\t\t" .. methodName .. "\n"
 		end
@@ -176,7 +200,7 @@ function _LOSInitializeInstance(class, ...)
 	setmetatable(object, _LOSObjectMetatable)
 
 	--Call the custom constructor if there is one available
-	local customConstructor = rawget(class, "_LOSCustomConstructor")
+	local customConstructor = _LOSFindClassMember(class, "_LOSCustomConstructor", true)
 	if (customConstructor) then
 		customConstructor(object, ...)
 	end

@@ -15,6 +15,10 @@ _LOSObjectMetatable = {
 
 		--Find the member of the class
 		local class = rawget(table, "_class")
+		print(test)
+		if (_LOSCallingSuperMethod) then
+			class = _LOSSuperClass
+		end
 		local member = _LOSFindClassMember(class, key, true)
 
 		--Throw an error if the member was not found
@@ -39,14 +43,14 @@ _LOSObjectMetatable = {
 
 	    --Find the member of the class
 		local class = rawget(table, "_class")
-		local member = _LOSFindClassMember(class, key, false)
+		local member = _LOSFindClassMember(class, key, type(value) ~= "function")
 
 		--Throw an error if the value is a method (methods can only be defined on classes)
 		local valueType = type(value)
 		assert(valueType ~= "function", "Defintion of methods on objects is not supported!")
 
 		--Throw an error if the member was not found
-		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(k))
+		assert(member ~= nil, "The class '" .. rawget(class, "_name") .. "' has no member " .. tostring(key))
 
 		--Throw an error if the member is a method (methods can only be defined on classes)
 		assert(member ~= "function", "Unable to assign a value to a method!")

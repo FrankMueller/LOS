@@ -14,18 +14,28 @@ end
 
 Class{ 'ClassB', ClassA }
 function ClassB:Test()
-	super:Test()
 	print("TestB", _LOSSuperClass, self.Name)
 end
 
-Class{ 'ClassC', ClassB }
+Class{ 'ClassC', ClassB, Bla = Boolean }
+function ClassC:create(name, bla)
+	super:create(name)
+	self.Bla = bla
+end
 function ClassC:Test()
 	super:Test()
 	print("TestC", _LOSSuperClass, self.Name)
+end
+function ClassC:ToStringX()
+	return "tostring"
 end
 
 object1 = ClassB:create("Lennard")
 object1:Test()
 
-object2 = ClassC:create("Sheldon")
+print()
+object2 = ClassC:create("Sheldon", true)
 object2:Test()
+
+print(_LOSGetClassInformationString(ClassC))
+print(_LOSGetObjectInformationString(object2))

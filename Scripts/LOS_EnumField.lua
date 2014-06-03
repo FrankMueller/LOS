@@ -35,14 +35,20 @@ _LOSEnumFieldMetatable = {
 	end
 }
 
-function _LOSCreateEnumField(name)
+function _LOSCreateEnumField(name, enum)
 
 	local enumField = {}
 
 	enumField._name = name
+	enumField._enum = enum
 
 	setmetatable(enumField, _LOSEnumFieldMetatable)
 
 	return enumField
 
+end
+
+--Helper function to evaluate if the specified item is an enum field
+function _LOSIsEnumField(item)
+	return item ~= nil and getmetatable(item) == _LOSEnumFieldMetatable
 end

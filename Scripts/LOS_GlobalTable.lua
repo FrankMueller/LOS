@@ -22,6 +22,7 @@ local _GlobalMetaTable = {
 			_LOSGlobalTable._LOSPerformingClassDefinition = true
 		end
 
+		--If the requested item is named "super" set a flag that we called "super" and return the "_LOSCallingObject" we set for the method called in LOS_Class->LOS_ClassMetaTable->newindex
 		if (key == "super") then
 			_LOSGlobalTable._LOSCallingSuperMethod = true
 			return _LOSGlobalTable._LOSCallingObject

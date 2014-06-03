@@ -43,8 +43,27 @@ _LOSClassMetatable = {
 			--Throw an error if there is already a constructor defined
 			assert(rawget(rawget(table, "_methods"), "_LOSCustomConstructor") == nil, "The class '" .. rawget(table, "_name") .. "' already contains a constructor.")
 
+			local function wrapper(self, ...)
+
+				_LOSCallingSuperMethod = false
+				_LOSCallingConstructor = true
+
+				local _LOSSuperClassSave = _LOSSuperClass
+
+				_LOSSuperClass = rawget(table, "_base")
+				_LOSCallingObject = self
+
+				local result = { value(self, ...) }
+
+				_LOSSuperClass = _LOSSuperClassSave
+				_LOSCallingObject = nil
+				_LOSCallingConstructor = nil
+
+				return unpack(result)
+			end
+
 			--Store the custom constructor in a hidden field to be able to call it after initialization
-			rawset(rawget(table, "_methods"), "_LOSCustomConstructor", value)
+			rawset(rawget(table, "_methods"), "_LOSCustomConstructor", wrapper)
 		else
 			--Find the member of the class
 			local member = _LOSFindClassMember(table, key, false)
@@ -57,7 +76,6 @@ _LOSClassMetatable = {
 				_LOSCallingSuperMethod = false
 
 				local _LOSSuperClassSave = _LOSSuperClass
-	local test = "Test"
 
 				_LOSSuperClass = rawget(table, "_base")
 				_LOSCallingObject = self
@@ -78,31 +96,9 @@ _LOSClassMetatable = {
 	--Specify a customized string conversion
 	__tostring = function(self)
 
-		--Get the class and attribute tables
-		local class = self
+		--Return the name of the class
+		return rawget(self, "_name")
 
-		--Add the type to the string
-		local str = "Class '" .. rawget(class, "_name")
-		local baseClass = rawget(class, "_base")
-		if (baseClass ~= nil) then
-			str = str .. " extends '" .. rawget(baseClass, "_name")
-		end
-
-		str = str .. "':\n"
-
-		--Add the attributes to the string
-		str = str .. "\tAttributes:\n"
-		for attributeName,attributeType in pairs(rawget(class, "_attributes")) do
-			str = str .. "\t\t" .. attributeType .. ": " .. attributeName .. "\n"
-		end
-
-		--Add the methods to the string
-		str = str .. "\tMethods:\n"
-		for methodName,method in pairs(rawget(class, "_methods")) do
-			str = str .. "\t\t" .. methodName .. "\n"
-		end
-
-		return str
 	end
 }
 
@@ -124,7 +120,7 @@ function Class(params)
 	--Extract the base class (if present)
 	baseClass = params[2]
 	if (baseClass ~= nil) then
-		assert(_LOSIsClass(baseClass), "Invalid base class! Cannot inherit from type.")
+		assert(_LOSIsClass(baseClass), "Invalid base class! Cannot inherit from type '" .. tostring(baseClass) .. "' because its not a class.")
 	end
 
 	--Create the new class
@@ -157,6 +153,11 @@ function Class(params)
 			--Throw an error if there is
 			attributeNameType = type(attributeName)
 			assert(attributeNameType == "string", "Invalid identifier '" .. attributeName .. "'. The identifier of the attribute is not allowed to be a number or boolean")
+
+			--Check if the attribute is already defined i a base classname
+			if (baseClass ~= nil) then
+				assert(_LOSFindClassMember(baseClass, attributeName, true) == nil, "Invalid redeclaration of attribute '" .. attributeName .. "'! The attribute is already defined in one of the base classes.")
+			end
 
 			--If the type of the attribute is the class we declare, then accept without further validation; otherwise validate the type of the attribute
 			if (attributeType == classname) then
@@ -208,6 +209,7 @@ function _LOSInitializeInstance(class, ...)
 	return object
 end
 
+--Initializes all attributes of an object declared in the specified class and all of its base classes
 function _LOSInitializeAttributes(objectAttributeTable, class)
 
 	for attributeName,attributeType in pairs(class._attributes) do
@@ -264,9 +266,72 @@ function _LOSValidateName(name, item)
 	assert(not string.match(name, " "), "Invalid identifier '" .. name .. "'. The identifier of the " .. item .. " is not allowed to contain white spaces")
 end
 
---Helper function to evaluate if the specified item is an enum
-function _LOSIsClass(object)
+--Helper function to evaluate if the specified item is a class
+function _LOSIsClass(item)
+	return item ~= nil and getmetatable(item) == _LOSClassMetatable
+end
 
-	return getmetatable(object) == _LOSClassMetatable
+--Helper function to evaluate if
+function _LOSGetClassIsComformTo(class, baseClass)
 
+	--If the class is equal to the specified base class then it is conform, otherwise check if the base class of "class" is conform to "baseClass"
+	if (class == baseClass) then
+		return true
+	else
+		--If the base class of "class" is not empty then check if the base class of "class" is conform to "baseClass"
+		local sourceBaseClass = rawget(class, "_base")
+		if (sourceBaseClass ~= nil) then
+			return _LOSGetClassIsComformTo(sourceBaseClass, baseClass)
+		end
+	end
+
+	return false
+end
+
+--Helper method for debugging which creates a string containing information about the specified class
+function _LOSGetClassInformationString(class)
+
+	local str = "Class '" .. rawget(class, "_name")
+	local baseClass = rawget(class, "_base")
+	if (baseClass ~= nil) then
+		str = str .. "' extends '" .. rawget(baseClass, "_name")
+	end
+
+	str = str .. "':\n"
+
+	--Add the attributes to the string
+	str = str .. "\tAttributes:\n"
+	for attributeName,attributeType in pairs(_LOSGetClassMembers(class, "_attributes")) do
+		str = str .. "\t\t" .. attributeType .. ": " .. attributeName .. "\n"
+	end
+
+	--Add the methods to the string
+	str = str .. "\tMethods:\n"
+	for methodName,method in pairs(_LOSGetClassMembers(class, "_methods")) do
+		str = str .. "\t\t" .. methodName .. "\n"
+	end
+
+	return str
+end
+
+--Helper method for debugging which creates table containing the members of the specified type ("_methods" or "_attributes") of the specified class
+function _LOSGetClassMembers(class, memberType)
+
+	--Build a table to store the methods in
+	local methodList = { }
+
+	--If the class "class" derives from another class then append the members of the base class
+	local baseClass = rawget(class, "_base")
+	if (baseClass ~= nil) then
+		for memberName,memberValue in pairs(_LOSGetClassMembers(baseClass, memberType)) do
+			methodList[memberName] = memberValue
+		end
+	end
+
+	--Append the members of the class iteself
+	for memberName,memberValue in pairs(rawget(class, memberType)) do
+		methodList[memberName] = memberValue
+	end
+
+	return methodList
 end

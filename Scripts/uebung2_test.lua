@@ -10,7 +10,6 @@ require("LOS_gruppe22")
 
 
 -- Aufzählungstyp
-
 Enum{ 'Gender', {'male', 'female', default = 'undetermined'} }
 
 
@@ -34,7 +33,7 @@ end
 function Pet:determineGender( g )
   self.gender = g
 end
-print(Pet)
+
 
 
 -- Erbende Klassen mit geerbtem Konstruktor sowie unverändert geerbten oder überschriebenen Methoden
@@ -44,7 +43,6 @@ Class{'Cat', Pet}
 function Cat:getNoise( )
   return 'Meow!'
 end
-print(Cat)
 
 
 Class{'Dog', Pet, friend = Pet}
@@ -59,7 +57,7 @@ function Dog:makeNoise( )
     self.friend:makeNoise()
   end
 end
-print(Dog)
+
 
 
 

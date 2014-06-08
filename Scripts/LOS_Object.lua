@@ -13,12 +13,24 @@ _LOSObjectMetatable = {
 	--Specify a customized function for get access of object members
     __index = function(table, key)
 
-		--Find the member of the class
-		local class = rawget(table, "_class")
-		print(test)
+		--Determin the class to search the member within
+		local class = _LOSGetObjectClass(table)
+
+		--If we process a call of a method on "super", then search the member within the super class
 		if (_LOSCallingSuperMethod) then
+			--Throw an error if there is no super class to call on
+			assert(_LOSSuperClass ~= nil, "Invalid call of 'super'! There is no base class to call on.")
+
+			--Manipulate the class we target so that we call on our super class
 			class = _LOSSuperClass
+
+			--If we are in a constructor and call the super constructor then manipulate the method we target to the custom constructor
+			if (_LOSCallingConstructor and key == "create") then
+				key = "_LOSCustomConstructor"
+			end
 		end
+
+		--Find the member of the class
 		local member = _LOSFindClassMember(class, key, true)
 
 		--Throw an error if the member was not found
@@ -42,7 +54,7 @@ _LOSObjectMetatable = {
     __newindex = function(table, key, value)
 
 	    --Find the member of the class
-		local class = rawget(table, "_class")
+		local class = _LOSGetObjectClass(table)
 		local member = _LOSFindClassMember(class, key, type(value) ~= "function")
 
 		--Throw an error if the value is a method (methods can only be defined on classes)
@@ -56,20 +68,40 @@ _LOSObjectMetatable = {
 		assert(member ~= "function", "Unable to assign a value to a method!")
 
 		--Compute the type of the attribute
-		local attributeType = member
-		if (attributeType == "String" or attributeType == "Number" or attributeType == "Boolean") then
+		local attributeTypeName = member
+		local attributeType = _G[attributeTypeName]
+
+		--Check if the assignment is valid
+		if (attributeTypeName == "String" or attributeTypeName == "Number" or attributeTypeName == "Boolean") then
+
+			--Throw an error if nil should be assigned to a base type attribute
 			assert(value ~= nil, "Invalid assignment! 'nil' is an invalid value for attributes of type 'String', 'Number' and 'Boolean'.")
 
-			attributeType = string.lower(attributeType)
-		end
+			--Throw an error if the type of the value can not be assigned
+			assert(valueType == string.lower(attributeTypeName), "Invalid assignment! Unable to cast object of type '" .. valueType .. "' into '" .. attributeTypeName .. "'")
 
-		--Compute the type of the value
-		if (valueType == "table") then
-			local valueClass = rawget(value, "_class")
-			valueType = valueClass._name
-		end
+		elseif (_LOSIsClass(attributeType)) then
 
-		assert(valueType == attributeType or value == nil, "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeType .. "'")
+			--Throw an error if the specified value is not an object
+			assert(_LOSIsObject(value), "Invalid assignment! The specified value is not an object ('" .. attributeTypeName .. "')")
+
+			--Throw an error if the object is of a type which is not conform to the type of the attribute
+			assert(value == nil or _LOSGetClassIsComformTo(_LOSGetObjectClass(value), attributeType), "Invalid assignment. Unable to cast object of type '" .. valueType .. "' into '" .. attributeTypeName .. "'")
+
+		elseif (_LOSIsEnum(attributeType)) then
+
+			--Throw an error if nil should be assigned to an enum type attribute
+			assert(value ~= nil, "Invalid assignment! 'nil' is an invalid value for attributes of type 'Enum'.")
+
+			--Throw an error if the specified value is not an enum field
+			assert(_LOSIsEnumField(value), "Invalid assignment! The specified value is not an enum ('" .. attributeTypeName .. "')")
+
+		else
+
+			--Throw an error if none of the cases above matches (This should never happen but...)
+			error("Invalid assignment! Unknown error.")
+
+		end
 
 		--Set the new value
 		local attributeTable = rawget(table, "_attributes")
@@ -78,25 +110,52 @@ _LOSObjectMetatable = {
 
 	--Specify a customized string conversion
 	__tostring = function(self)
-		--Get the class and attribute tables
-		local class = rawget(self, "_class")
-		local attributeTable = rawget(self, "_attributes")
 
-		--Add the type to the string
-		local str = "Object type:\n\t" .. rawget(class, "_name") .. "\n"
+		--Get the class and attribute table
+		local class = _LOSGetObjectClass(self)
 
-		--Add the attributes to the string
-		str = "\r\n" .. str .. "Attributes:\n"
-		for attributeName,attributeType in pairs(rawget(class, "_attributes")) do
-			str = str .. "\t" .. attributeType .. ": " .. attributeName .. " = " .. tostring(attributeTable[attributeName]) .. "\n"
+		--If there is a method available which is named "ToString" then call this, otherwise return the object info string
+		local toStringMethod = _LOSFindClassMember(class, "ToString", true)
+		if (toStringMethod ~= nil and type(toStringMethod) == "function") then
+			local stringRepresentation = toStringMethod(self)
+			return stringRepresentation or ""
+		else
+			return _LOSGetObjectInformationString(self)
 		end
-
-		--Add the methods to the string
-		str = "\r\n" .. str .. "Methods:\n"
-		for methodName,method in pairs(rawget(class, "_methods")) do
-			str = str .. "\t" .. methodName .. "\n"
-		end
-
-		return str
 	end
 }
+
+--Helper function to evaluate if the specified item is an object
+function _LOSIsObject(item)
+	return item == nil or getmetatable(item) == _LOSObjectMetatable
+end
+
+--Helper function to determin the class of an object
+function _LOSGetObjectClass(object)
+	return rawget(object, "_class")
+end
+
+--Helper method for debugging which creates a string containing information about the specified object
+function _LOSGetObjectInformationString(object)
+
+	--Get the class and attribute table
+	local class = _LOSGetObjectClass(object)
+	local attributeTable = rawget(object, "_attributes")
+
+	--Add the type to the string
+	local str = "Object type:\t" .. rawget(class, "_name") .. "\n"
+
+	--Add the attributes to the string
+	str = str .. "\tAttributes:\n"
+	for attributeName,attributeType in pairs(_LOSGetClassMembers(class, "_attributes")) do
+		str = str .. "\t\t" .. attributeType .. ": " .. attributeName .. " = " .. tostring(attributeTable[attributeName]) .. "\n"
+	end
+
+	--Add the methods to the string
+	str = str .. "\tMethods:\n"
+	for methodName,method in pairs(_LOSGetClassMembers(class, "_methods")) do
+		str = str .. "\t\t" .. methodName .. "\n"
+	end
+
+	return str
+end

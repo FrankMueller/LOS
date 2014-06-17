@@ -212,6 +212,7 @@ end
 --Initializes all attributes of an object declared in the specified class and all of its base classes
 function _LOSInitializeAttributes(objectAttributeTable, class)
 
+	--Initialize all attributes declared in the class directly
 	for attributeName,attributeType in pairs(class._attributes) do
 		if (attributeType == String._name) then
 			objectAttributeTable[attributeName] = ""
@@ -226,6 +227,7 @@ function _LOSInitializeAttributes(objectAttributeTable, class)
 		end
 	end
 
+	--If the class derives from another class then initialize the attributes of the base class too (recursivly))
 	local baseClass = rawget(class, "_base")
 	if (baseClass ~= nil) then
 		_LOSInitializeAttributes(objectAttributeTable, baseClass)

@@ -31,6 +31,7 @@ function Dao:create(whitePlayerName, blackPlayerName, interactiveMode)
 	end
 end
 
+--The main loop method for the interactive mode
 function Dao:InteractiveMainLoop()
 
 	local skipPrintGame = false
@@ -51,15 +52,22 @@ function Dao:InteractiveMainLoop()
 		--Get the command
 		local command = io.read()
 
-		if (command ~= nil and string.len(command) > 2) then
-			--Parse the command
+		--Stop the main loop if requested
+		if (command == "exit") then
+			break
+		end
+
+		--Process the command if possible
+		if (command ~= nil and string.len(command) > 2 and string.sub(command, 3, 3) == " ") then
+			--Split the command into field name and direction string
 			local startFieldNameToken = string.sub(command, 1, 2)
 			local directionToken = string.sub(command, 4, -1)
 
+			--Try to parse the field name and direction string
 			local fieldNameValid = pcall(self.PlayBoard.getFieldIndex, self.PlayBoard, startFieldNameToken)
 			local directionValid, direction = pcall(self.getDirectionFromString, self, directionToken)
 
-			--
+			--If parsing failed then show an appropriate error message, otherwise perform the move
 			if (not fieldNameValid or not directionValid) then
 				if (not fieldNameValid) then
 					print("> sorry " .. nextPlayerName .. ", I can't perform your move: Can't find the field '" .. startFieldNameToken .. "' on the playboard")
@@ -70,22 +78,21 @@ function Dao:InteractiveMainLoop()
 					skipPrintGame = true
 				end
 			else
-
 				--Perform the move
 				local result = self:makeMove(startFieldNameToken, direction)
 				if (result == Result.ok) then
 					skipPrintGame = false
 				elseif (result == Result.noMarble) then
-					print("> sorry " .. nextPlayerName .. ", I can't perform your move: There is no meeple at the field '" .. startFieldNameToken .. "'")
+					print("> sorry " .. nextPlayerName .. ", I can't perform your move: There is no marble at the field '" .. startFieldNameToken .. "'")
 					skipPrintGame = true
 				elseif (result == Result.illegalInput) then
 					print("> sorry " .. nextPlayerName .. ", I can't perform your move: Your command is illegal.")
 					skipPrintGame = true
 				elseif (result == Result.wrongColor) then
-					print("> sorry " .. nextPlayerName .. ", I can't perform your move: You should not move your opposits meeples!")
+					print("> sorry " .. nextPlayerName .. ", I can't perform your move: You should not move your opposits marbles!")
 					skipPrintGame = true
 				elseif (result == Result.noMovement) then
-					print("> sorry " .. nextPlayerName .. ", I can't perform your move: Your meeple cannot move in direction '" .. directionToken .. "'!")
+					print("> sorry " .. nextPlayerName .. ", I can't perform your move: Your marble cannot move in direction '" .. directionToken .. "'!")
 					skipPrintGame = true
 				elseif (result == Result.gameOver) then
 					self:printGame()
@@ -117,11 +124,11 @@ function Dao:handleMove(startField, direction)
 	--If the field name and the direction are valid then go on with the move
 	if (fieldNameValid and directionValid) then
 
-		--If there is no meeple on the field then return that the move is invalid
-		if (self.PlayBoard[startField] == DaoMeeple.None) then
+		--If there is no marble on the field then return that the move is invalid
+		if (self.PlayBoard[startField] == DaoMarble.None) then
 			return false, Result.noMarble
 
-		--If the meeple on the field belongs to the other player then return that the move is invalid
+		--If the marble on the field belongs to the other player then return that the move is invalid
 		elseif (self:getColorAt(startField) ~= self.nextPlayer) then
 			return false, Result.wrongColor
 
@@ -139,9 +146,9 @@ function Dao:handleMove(startField, direction)
 			if (moveLength == 0) then
 				return false, Result.noMovement
 			else
-				--Move the meeple from the start field to the target field
-				self.PlayBoard:setMeepleAt(endColumnIndex, endRowIndex, self.PlayBoard:getMeepleAt(startColumnIndex, startRowIndex))
-				self.PlayBoard:setMeepleAt(startColumnIndex, startRowIndex, DaoMeeple.None)
+				--Move the marble from the start field to the target field
+				self.PlayBoard:setMarbleAt(endColumnIndex, endRowIndex, self.PlayBoard:getMarbleAt(startColumnIndex, startRowIndex))
+				self.PlayBoard:setMarbleAt(startColumnIndex, startRowIndex, DaoMarble.None)
 
 				--Check if this move ends the game
 				if (self:getWinner() == PlayerColor.NONE) then
@@ -180,7 +187,7 @@ function Dao:getMoveEndField(startColumnIndex, startRowIndex, direction)
 	--If the next field is still on the board and is free then move forward and try to move on; otherwise end the move here
 	if (newRowIndex > 0 and newRowIndex <= self.PlayBoard.PlayingFieldCount and
 		newColumnIndex > 0 and newColumnIndex <= self.PlayBoard.PlayingFieldCount and
-		self.PlayBoard:getMeepleAt(newColumnIndex, newRowIndex) == DaoMeeple.None) then
+		self.PlayBoard:getMarbleAt(newColumnIndex, newRowIndex) == DaoMarble.None) then
 
 		--Move on recursivly
 		return self:getMoveEndField(newColumnIndex, newRowIndex, direction)
@@ -189,34 +196,37 @@ function Dao:getMoveEndField(startColumnIndex, startRowIndex, direction)
 	end
 end
 
+--Gets the color of the marble at the field with the specified name
 function Dao:getColorAt(fieldName)
 	local columnIndex, rowIndex = self.PlayBoard:getFieldIndex(fieldName)
 
 	return self:getColorAtIndex(columnIndex, rowIndex)
 end
 
+--Gets the color of the marble at the field with the specified indicies
 function Dao:getColorAtIndex(columnIndex, rowIndex)
-	local fieldValue = self.PlayBoard:getMeepleAt(columnIndex, rowIndex)
+	local fieldValue = self.PlayBoard:getMarbleAt(columnIndex, rowIndex)
 
-	if (fieldValue == DaoMeeple.W) then
+	if (fieldValue == DaoMarble.W) then
 		return PlayerColor.white
-	elseif (fieldValue == DaoMeeple.B) then
+	elseif (fieldValue == DaoMarble.B) then
 		return PlayerColor.black
-	elseif (fieldValue == DaoMeeple.None) then
+	elseif (fieldValue == DaoMarble.None) then
 		return PlayerColor.NONE
 	else
 		return PlayerColor.BOTH
 	end
 end
 
+--Parses the specified string into a Direction
 function Dao:getDirectionFromString(directionString)
 	return Direction[string.upper(directionString)]
 end
 
 --Gets the PlayerColor representing the player who has won the game
 function Dao:getWinner()
-	local blackHasWon = self:hasWon(DaoMeeple.B)
-	local whiteHasWon = self:hasWon(DaoMeeple.W)
+	local blackHasWon = self:hasWon(DaoMarble.B)
+	local whiteHasWon = self:hasWon(DaoMarble.W)
 
 	if (blackHasWon and whiteHasWon) then
 		return PlayerColor.BOTH
@@ -229,23 +239,23 @@ function Dao:getWinner()
 	end
 end
 
---Checks if the player who owns the specified meeple has won the game
-function Dao:hasWon(meeple)
-	return self:hasWonByLine(meeple) or self:hasWonByBlock(meeple) or self:hasWonByEdgePoints(meeple) or self:hasWonTrappedMeeple(meeple)
+--Checks if the player who owns the specified marble has won the game
+function Dao:hasWon(marble)
+	return self:hasWonByLine(marble) or self:hasWonByBlock(marble) or self:hasWonByEdgePoints(marble) or self:hasWonByTrappedMarble(marble)
 end
 
---Checks if the player who owns the specified meeple has won by the 'full line' criteria
-function Dao:hasWonByLine(meeple)
+--Checks if the player who owns the specified marble has won by the 'full line' criteria
+function Dao:hasWonByLine(marble)
 
 	--Loop through all fields and search for full columns/rows
 	for	i=1,self.PlayBoard.PlayingFieldCount,1 do
 
-		--Check if all meeples in the current column/row are of the same type like we search for
+		--Check if all marbles in the current column/row are of the same type like we search for
 		local hasRow = true
 		local hasColumn = true
 		for	j=1,self.PlayBoard.PlayingFieldCount,1 do
-			hasRow = hasRow and self.PlayBoard:getMeepleAt(i, j) == meeple
-			hasColumn = hasColumn and self.PlayBoard:getMeepleAt(j, i) == meeple
+			hasRow = hasRow and self.PlayBoard:getMarbleAt(i, j) == marble
+			hasColumn = hasColumn and self.PlayBoard:getMarbleAt(j, i) == marble
 		end
 
 		--If a full column or row exists then return that the player has won; otherwise check the next column/row
@@ -257,15 +267,15 @@ function Dao:hasWonByLine(meeple)
 	return false
 end
 
---Checks if the player who owns the specified meeple has won by the 'block' criteria
-function Dao:hasWonByBlock(meeple)
+--Checks if the player who owns the specified marble has won by the 'block' criteria
+function Dao:hasWonByBlock(marble)
 
-	--Compute the center point of all meeples of the same color as the specified meeple
+	--Compute the center point of all marbles of the same color as the specified marble
 	local centerColumn = 0
 	local centerRow = 0
 	for i=1,self.PlayBoard.PlayingFieldCount,1 do
 		for j=1,self.PlayBoard.PlayingFieldCount,1 do
-			if (self.PlayBoard:getMeepleAt(i, j) == meeple) then
+			if (self.PlayBoard:getMarbleAt(i, j) == marble) then
 				centerColumn = centerColumn + i
 				centerRow = centerRow + j
 			end
@@ -274,21 +284,21 @@ function Dao:hasWonByBlock(meeple)
 	centerColumn = centerColumn / self.PlayBoard.PlayingFieldCount
 	centerRow = centerRow / self.PlayBoard.PlayingFieldCount
 
-	--Compute the radius where all meeples have to be within to fullfill the block criteria
-	local radius = math.sqrt(math.sqrt(self.PlayBoard.PlayingFieldCount)/2)
+	--Compute the radius where all marbles have to be within to fullfill the block criteria (incl. a small tolerance of 0.1%)
+	local radius = 1.001 * math.sqrt(self.PlayBoard.PlayingFieldCount/2)/2
 
-	--Check if all meeples of the same color as the specified meeple are within the block radius
+	--Check if all marbles of the same color as the specified marble are within the block radius
 	for i=1,self.PlayBoard.PlayingFieldCount,1 do
 		for j=1,self.PlayBoard.PlayingFieldCount,1 do
 
-			if (self.PlayBoard:getMeepleAt(i, j) == meeple) then
+			if (self.PlayBoard:getMarbleAt(i, j) == marble) then
 
-				--Compute the distance of the meeple to the center
+				--Compute the distance of the marble to the center
 				local distanceInColumn = centerColumn - i
 				local distanceInRow = centerRow - j
 				local distanceToCenter = math.sqrt(distanceInColumn*distanceInColumn + distanceInRow*distanceInRow)
 
-				--If one of the meeples is more far away from the center as the radius then the criteria is not full filled
+				--If one of the marbles is more far away from the center as the radius then the criteria is not full filled
 				if (distanceToCenter > radius) then
 					return false
 				end
@@ -296,45 +306,45 @@ function Dao:hasWonByBlock(meeple)
 		end
 	end
 
-	--All meeples are within the radius -> criteria fullfilled
+	--All marbles are within the radius -> criteria fullfilled
 	return true
 
 end
 
---Checks if the player who owns the specified meeple has won by the 'edge point' criteria
-function Dao:hasWonByEdgePoints(meeple)
-	return self.PlayBoard:getMeepleAt(1, 1) == meeple and
-		self.PlayBoard:getMeepleAt(self.PlayBoard.PlayingFieldCount, 1) == meeple and
-		self.PlayBoard:getMeepleAt(1, self.PlayBoard.PlayingFieldCount) == meeple and
-		self.PlayBoard:getMeepleAt(self.PlayBoard.PlayingFieldCount, self.PlayBoard.PlayingFieldCount) == meeple
+--Checks if the player who owns the specified marble has won by the 'edge point' criteria
+function Dao:hasWonByEdgePoints(marble)
+	return self.PlayBoard:getMarbleAt(1, 1) == marble and
+		self.PlayBoard:getMarbleAt(self.PlayBoard.PlayingFieldCount, 1) == marble and
+		self.PlayBoard:getMarbleAt(1, self.PlayBoard.PlayingFieldCount) == marble and
+		self.PlayBoard:getMarbleAt(self.PlayBoard.PlayingFieldCount, self.PlayBoard.PlayingFieldCount) == marble
 end
 
---Checks if the player who owns the specified meeple has won by the 'trapped meeple' criteria
-function Dao:hasWonTrappedMeeple(meeple)
+--Checks if the player who owns the specified marble has won by the 'trapped marble' criteria
+function Dao:hasWonByTrappedMarble(marble)
 
-	--Compute which meeple is the meeple of the opponent
-	local opponentMeeple = DaoMeeple.None
-	if (meeple == DaoMeeple.W) then
-		opponentMeeple = DaoMeeple.B
-	elseif (meeple == DaoMeeple.B) then
-		opponentMeeple = DaoMeeple.W
+	--Compute which marble is the marble of the opponent
+	local opponentMarble = DaoMarble.None
+	if (marble == DaoMarble.W) then
+		opponentMarble = DaoMarble.B
+	elseif (marble == DaoMarble.B) then
+		opponentMarble = DaoMarble.W
 	else
 		return false
 	end
 
-	--Check all edges if there is a meeple trapped
+	--Check all edges if there is a marble trapped
 	local n = self.PlayBoard.PlayingFieldCount
-	if (self.PlayBoard:getMeepleAt(1, 1) == meeple and self.PlayBoard:getMeepleAt(1, 2) == opponentMeeple and
-		self.PlayBoard:getMeepleAt(2, 2) == opponentMeeple and self.PlayBoard:getMeepleAt(2, 1) == opponentMeeple) then
+	if (self.PlayBoard:getMarbleAt(1, 1) == marble and self.PlayBoard:getMarbleAt(1, 2) == opponentMarble and
+		self.PlayBoard:getMarbleAt(2, 2) == opponentMarble and self.PlayBoard:getMarbleAt(2, 1) == opponentMarble) then
 		return true
-	elseif (self.PlayBoard:getMeepleAt(1, n) == meeple and self.PlayBoard:getMeepleAt(1, n-1) == opponentMeeple and
-		self.PlayBoard:getMeepleAt(2, n) == opponentMeeple and self.PlayBoard:getMeepleAt(2, n-1) == opponentMeeple) then
+	elseif (self.PlayBoard:getMarbleAt(1, n) == marble and self.PlayBoard:getMarbleAt(1, n-1) == opponentMarble and
+		self.PlayBoard:getMarbleAt(2, n) == opponentMarble and self.PlayBoard:getMarbleAt(2, n-1) == opponentMarble) then
 		return true
-	elseif (self.PlayBoard:getMeepleAt(n, 1) == meeple and self.PlayBoard:getMeepleAt(n-1, 1) == opponentMeeple and
-		self.PlayBoard:getMeepleAt(n, 2) == opponentMeeple and self.PlayBoard:getMeepleAt(n-1, 2) == opponentMeeple) then
+	elseif (self.PlayBoard:getMarbleAt(n, 1) == marble and self.PlayBoard:getMarbleAt(n-1, 1) == opponentMarble and
+		self.PlayBoard:getMarbleAt(n, 2) == opponentMarble and self.PlayBoard:getMarbleAt(n-1, 2) == opponentMarble) then
 		return true
-	elseif (self.PlayBoard:getMeepleAt(n, n) == meeple and self.PlayBoard:getMeepleAt(n-1, n) == opponentMeeple and
-		self.PlayBoard:getMeepleAt(n, n-1) == opponentMeeple and self.PlayBoard:getMeepleAt(n-1, n-1) == opponentMeeple) then
+	elseif (self.PlayBoard:getMarbleAt(n, n) == marble and self.PlayBoard:getMarbleAt(n-1, n) == opponentMarble and
+		self.PlayBoard:getMarbleAt(n, n-1) == opponentMarble and self.PlayBoard:getMarbleAt(n-1, n-1) == opponentMarble) then
 		return true
 	else
 		return false
@@ -342,6 +352,7 @@ function Dao:hasWonTrappedMeeple(meeple)
 
 end
 
+--Prints the playboard
 function Dao:printGame()
 	self.PlayBoard:print()
 end

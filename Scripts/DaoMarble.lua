@@ -1,6 +1,6 @@
 ---------------------------------------------
 -- Implements an enumeration of the available
--- meeples in a Dao game
+-- marbles in a Dao game
 ---------------------------------------------
 -- Authors:
 --   Ghadh Altaiari    - 322844
@@ -8,4 +8,4 @@
 --   Frank Müller      - 200407
 ---------------------------------------------
 
-Enum{ 'DaoMeeple', { 'W', 'B', default = 'None' } }
+Enum{ 'DaoMarble', { 'W', 'B', default = 'None' } }

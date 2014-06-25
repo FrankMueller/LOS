@@ -96,6 +96,9 @@ _LOSObjectMetatable = {
 			--Throw an error if the specified value is not an enum field
 			assert(_LOSIsEnumField(value), "Invalid assignment! The specified value is not an enum ('" .. attributeTypeName .. "')")
 
+			--Throw an error if the specified value is not an enum field
+			assert(rawget(value, "_enum") == attributeType, "Invalid assignment! The specified value is not of type '" .. attributeTypeName .. "'")
+
 		else
 
 			--Throw an error if none of the cases above matches (This should never happen but...)

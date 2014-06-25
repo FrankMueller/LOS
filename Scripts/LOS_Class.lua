@@ -49,6 +49,7 @@ _LOSClassMetatable = {
 				_LOSCallingConstructor = true
 
 				local _LOSSuperClassSave = _LOSSuperClass
+				local _LOSCallingObjectSave = _LOSCallingObject
 
 				_LOSSuperClass = rawget(table, "_base")
 				_LOSCallingObject = self
@@ -56,7 +57,7 @@ _LOSClassMetatable = {
 				local result = { value(self, ...) }
 
 				_LOSSuperClass = _LOSSuperClassSave
-				_LOSCallingObject = nil
+				_LOSCallingObject = _LOSCallingObjectSave
 				_LOSCallingConstructor = nil
 
 				return unpack(result)
@@ -76,6 +77,7 @@ _LOSClassMetatable = {
 				_LOSCallingSuperMethod = false
 
 				local _LOSSuperClassSave = _LOSSuperClass
+				local _LOSCallingObjectSave = _LOSCallingObject
 
 				_LOSSuperClass = rawget(table, "_base")
 				_LOSCallingObject = self
@@ -83,7 +85,7 @@ _LOSClassMetatable = {
 				local result = { value(self, ...) }
 
 				_LOSSuperClass = _LOSSuperClassSave
-				_LOSCallingObject = nil
+				_LOSCallingObject = _LOSCallingObjectSave
 
 				return unpack(result)
 			end
@@ -120,7 +122,7 @@ function Class(params)
 	--Extract the base class (if present)
 	baseClass = params[2]
 	if (baseClass ~= nil) then
-		assert(_LOSIsClass(baseClass), "Invalid base class! Cannot inherit from type '" .. tostring(baseClass) .. "' because its not a class.")
+		assert(_LOSIsClass(baseClass) and baseClass ~= Number and baseClass ~= Boolean and baseClass ~= String, "Invalid base class! Cannot inherit from type '" .. tostring(baseClass) .. "' because its not a class.")
 	end
 
 	--Create the new class

@@ -2,7 +2,7 @@ require("LOS_gruppe22")
 require("Dao")
 
 
-local game = Dao:create( 'Stefan', 'Kristian' )
+
 print()
 
 ------------------------

@@ -7,14 +7,14 @@
 --   Frank Müller      - 200407
 ---------------------------------------------
 
-require("DaoMeeple")
+require("DaoMarble")
 
 --Declare the class
 Class{ 'DaoPlayBoard',
-	a1 = DaoMeeple, a2 = DaoMeeple, a3 = DaoMeeple, a4 = DaoMeeple,
-	b1 = DaoMeeple, b2 = DaoMeeple, b3 = DaoMeeple, b4 = DaoMeeple,
-	c1 = DaoMeeple, c2 = DaoMeeple, c3 = DaoMeeple, c4 = DaoMeeple,
-	d1 = DaoMeeple, d2 = DaoMeeple, d3 = DaoMeeple, d4 = DaoMeeple,
+	a1 = DaoMarble, a2 = DaoMarble, a3 = DaoMarble, a4 = DaoMarble,
+	b1 = DaoMarble, b2 = DaoMarble, b3 = DaoMarble, b4 = DaoMarble,
+	c1 = DaoMarble, c2 = DaoMarble, c3 = DaoMarble, c4 = DaoMarble,
+	d1 = DaoMarble, d2 = DaoMarble, d3 = DaoMarble, d4 = DaoMarble,
 	PlayingFieldCount = Number
 }
 
@@ -24,10 +24,10 @@ function DaoPlayBoard:create()
 	--Set the number of fields of the board
 	self.PlayingFieldCount = 4
 
-	--Set the meeples to their start positions
+	--Set the marbles to their start positions
 	for i=1,self.PlayingFieldCount,1 do
-		self:setMeepleAt(i, i, DaoMeeple.B)
-		self:setMeepleAt(i, self.PlayingFieldCount - i + 1, DaoMeeple.W)
+		self:setMarbleAt(i, i, DaoMarble.B)
+		self:setMarbleAt(i, self.PlayingFieldCount - i + 1, DaoMarble.W)
 	end
 end
 
@@ -63,22 +63,22 @@ function DaoPlayBoard:getFieldIndex(fieldName)
 	return columnIndex, rowIndex
 end
 
---Sets the DaoMeeple at the field specified by column and row index to the specified value
-function DaoPlayBoard:setMeepleAt(columnIndex, rowIndex, meeple)
+--Sets the DaoMarble at the field specified by column and row index to the specified value
+function DaoPlayBoard:setMarbleAt(columnIndex, rowIndex, marble)
 
 	--Make sure the field indicies are valid
 	assert(columnIndex > 0 and columnIndex <= self.PlayingFieldCount, "The playboard has no column '" .. columnIndex .. "'")
 	assert(rowIndex > 0 and rowIndex <= self.PlayingFieldCount, "The playboard has no column '" .. rowIndex .. "'")
 
 	--Make sure the value to set is valid
-	assert(meeple == DaoMeeple.W or meeple == DaoMeeple.B or meeple == DaoMeeple.None, "Argument out of range 'meeple'")
+	assert(marble == DaoMarble.W or marble == DaoMarble.B or marble == DaoMarble.None, "Argument out of range 'marble'")
 
 	--Set the value
-	self[self:getColumnChar(columnIndex) .. tostring(rowIndex)] = meeple
+	self[self:getColumnChar(columnIndex) .. tostring(rowIndex)] = marble
 end
 
---Gets the DaoMeeple at the field specified by column and row index
-function DaoPlayBoard:getMeepleAt(columnIndex, rowIndex)
+--Gets the DaoMarble at the field specified by column and row index
+function DaoPlayBoard:getMarbleAt(columnIndex, rowIndex)
 
 	--Make sure the field indicies are valid
 	assert(columnIndex > 0 and columnIndex <= self.PlayingFieldCount, "The playboard has no column '" .. columnIndex .. "'")
@@ -90,11 +90,20 @@ end
 
 --Prints the playboard
 function DaoPlayBoard:print()
+	local columnHeader = "   | "
+	local columnLine = " --+-"
+	for column=1,self.PlayingFieldCount,1 do
+		columnHeader = columnHeader .. self:getColumnChar(column) .. " "
+		columnLine = columnLine .. "--"
+	end
+	print(columnHeader)
+	print(columnLine)
+
 	for row=self.PlayingFieldCount,1,-1 do
-		local rowString = ""
+		local rowString = " " .. tostring(row) .. " | "
 		for column=1,self.PlayingFieldCount,1 do
-			local value = self:getMeepleAt(column, row)
-			if (value == DaoMeeple.None) then
+			local value = self:getMarbleAt(column, row)
+			if (value == DaoMarble.None) then
 				rowString = rowString .. ". "
 			else
 				rowString = rowString .. tostring(value) .. " "

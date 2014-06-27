@@ -41,17 +41,20 @@ function checkForWinner(game)
 			print("White has won by line", winByLineCounter)
 			game:printGame()
 			print()
-		elseif (game:hasWonByBlock(DaoMarble.W)) then
+		end
+		if (game:hasWonByBlock(DaoMarble.W)) then
 			winByBlockCounter = winByBlockCounter+1
 			print("White has won by block", winByBlockCounter)
 			game:printGame()
 			print()
-		elseif (game:hasWonByEdgePoints(DaoMarble.W)) then
+		end
+		if (game:hasWonByEdgePoints(DaoMarble.W)) then
 			winByEdgeCounter = winByEdgeCounter+1
 			print("White has won by edges", winByEdgeCounter)
 			game:printGame()
 			print()
-		elseif (game:hasWonByTrappedMarble(DaoMarble.W)) then
+		end
+		if (game:hasWonByTrappedMarble(DaoMarble.W)) then
 			winByTrapCounter = winByTrapCounter+1
 			print("White has won by trap", winByTrapCounter)
 			game:printGame()
@@ -123,5 +126,7 @@ print("winByEdgeCounter", winByEdgeCounter)
 print("winByTrapCounter", winByTrapCounter)
 
 --(n!/((n-k)! * k!))
-RunTest("Get color at black field", function() assert(game:getColorAt("a1") == PlayerColor.black) end, false)
-RunTest("Get color at black field", function() assert(game:getColorAt("a1") == PlayerColor.black) end, false)
+RunTest("Win situations by line", function() assert(winByLineCounter == 3960, "Invalid number of win situations!") end, false)
+RunTest("Win situations by block", function() assert(winByBlockCounter == 4455, "Invalid number of win situations!") end, false)
+RunTest("Win situations by edge", function() assert(winByEdgeCounter == 495, "Invalid number of win situations!") end, false)
+RunTest("Win situations by trap", function() assert(winByTrapCounter == 7920, "Invalid number of win situations!") end, false)
